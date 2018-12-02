@@ -55,12 +55,6 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
     /** Pointer to Cache Line to Update Finally */
     cacheLine *line;
     
-    /** Initial Flag of the Cache Line to be Updated */
-    cacheFlag initialFlag;
-    
-    /** Final Flag of the Cache Line to be Updated */
-    cacheFlag finalFlag;
-    
     /** Check Type of Read and Update Counter */
     if(rdWr==RD_REQ)
     {
@@ -86,9 +80,6 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
         
         /** Store Victim Block to the Cache Line to Update Pointer */
         line = victim;
-        
-        /** Record Initial Flag of the Cache Line */
-        initialFlag = victim->getFlags();
         
         if(victim->getFlags()==MODIFIED)
         {
@@ -137,7 +128,7 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
         hitMiss = HIT;
         
         /** Record Initial Flag of the Cache Line */
-        initialFlag = line->getFlags();
+//         initialFlag = line->getFlags();
         
         if((line->getFlags()==SHARED)&&(rdWr==WR_REQ))
         {
@@ -169,19 +160,24 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
                         for(loop_i=0; loop_i<num_processors; loop_i++)
                         {
                             /** Look for the Request Address in the Cache */
-                            cacheLine *line_proc = cacheOnbus[loop_i]->findLine(busAddr);
+                            cacheLine *line_procn = cacheOnbus[loop_i]->findLine(busAddr);
                             
                             /** If Found in Cache Other than Cache Serivicing the Request */
-                            if((line_proc!=NULL)&&(loop_i!=procNum)&&(line_proc->getFlags()==MODIFIED))
+                            if((line_procn!=NULL)&&(loop_i!=procNum)&&(line_procn->getFlags()==MODIFIED))
                             {
                                 /** Set Cache Line State To Shared */
-                                line_proc->setFlags(SHARED);
+                                line_procn->setFlags(SHARED);
                                 
                                 /** Update Intervention Counter */
                                 cacheOnbus[loop_i]->incInterv();
                                 
                                 /** Update Flush Counter */
                                 cacheOnbus[loop_i]->incFlush();
+                                
+                                cacheOnbus[loop_i]->incMemtransactions();
+                                
+                                /** Update Writeback Counter */
+                                cacheOnbus[loop_i]->incWB();
                                 
                                 busControl = loop_i;
                                 busCommand = FLUSH;
@@ -198,9 +194,6 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
                                 /** If Found in Cache Other than Cache Serivicing the Request */
                                 if((line_proc!=NULL)&&(loop_i!=procNum))
                                 {
-                                    /** Invalidate Cache Line */
-                                    line_proc->invalidate();
-                                    
                                     /** Update Invalidation Counter */
                                     cacheOnbus[loop_i]->incInval();
                                     
@@ -210,14 +203,23 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
                                         /** Update Flush Counter */
                                         cacheOnbus[loop_i]->incFlush();
                                         
+                                        cacheOnbus[loop_i]->incMemtransactions();
+                                        
+                                        /** Update Writeback Counter */
+                                        cacheOnbus[loop_i]->incWB();
+                                        
                                         busControl = loop_i;
                                         busCommand = FLUSH;
                                     }
+                                    
+                                    /** Invalidate Cache Line */
+                                    line_proc->invalidate();
                                 }
                             }
                             break;
             
-            default:    break;
+            default:    printf("ERROR\n");
+                        break;
         }
     }
     
@@ -233,12 +235,12 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
         if(rdWr==WR_REQ)
         {
             line->setFlags(MODIFIED);
-            finalFlag = MODIFIED;
+//             finalFlag = MODIFIED;
         }
-        else
-        {
-            finalFlag = SHARED;
-        }
+//         else
+//         {
+//             finalFlag = SHARED;
+//         }
     }
     else
     {
@@ -251,12 +253,12 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
         if(rdWr==WR_REQ)
         {
             line->setFlags(MODIFIED);
-            finalFlag = MODIFIED;
+//             finalFlag = MODIFIED;
         }
         else
         {
             line->setFlags(SHARED);
-            finalFlag = SHARED;
+//             finalFlag = SHARED;
         }
     }
     
@@ -266,11 +268,13 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
     busAddr = 0xFFFFFFFF;
     busCommand = INVALID_BUS;
     
+    hitMiss = RST_OUT;
+    
     /** Update Invalidation or Intervention Counter */
-    if(finalFlag==INVALID)  /** It's Invalidation */
-    {
-        cacheOnbus[procNum]->incInval();
-    }
+//     if(finalFlag==INVALID)  /** It's Invalidation */
+//     {
+//         cacheOnbus[procNum]->incInval();
+//     }
 //     else
 //     if((initialFlag==MODIFIED)&&(finalFlag==SHARED))    /** It's Intervention */
 //     {
@@ -280,12 +284,12 @@ void coherenceController::processMSI(ulong procNum, uchar rdWr, ulong reqAddr)
 
 void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
 {
-    ;
+    printf("ERROR: MESI\n");
 }
 
 void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr)
 {
-    ;
+    printf("ERROR: DRAGON\n");
 }
 
 void coherenceController::dumpMetrics()
@@ -293,22 +297,22 @@ void coherenceController::dumpMetrics()
     uchar loop_i;
     for(loop_i=0; loop_i<num_processors; loop_i++)
     {
-        /*
+        
         printf("============ Simulation results (Cache %u) ============\n",(uint)loop_i);
-        printf("01. number of reads:%38lu\n", cacheOnbus[loop_i]->getReads());
-        printf("02. number of read misses:%22lu\n", cacheOnbus[loop_i]->getRM());
-        printf("03. number of writes:%37lu\n", cacheOnbus[loop_i]->getWrites());
-        printf("04. number of write misses:%19lu\n", cacheOnbus[loop_i]->getWM());
-        printf("05. total miss rate:%33.2f\n", ((float)(cacheOnbus[loop_i]->getRM()+cacheOnbus[loop_i]->getWM()))*100.0/((float)(cacheOnbus[loop_i]->getReads()+cacheOnbus[loop_i]->getWrites())));
-        printf("06. number of writebacks:%22lu\n", cacheOnbus[loop_i]->getWB());
-        printf("07. number of cache-to-cache transfers:%14lu\n", cacheOnbus[loop_i]->getCache2cache());
-        printf("08. number of memory transactions:%15lu\n", cacheOnbus[loop_i]->getMemtransactions());
+        printf("01. number of reads:%34lu\n", cacheOnbus[loop_i]->getReads());
+        printf("02. number of read misses:%26lu\n", cacheOnbus[loop_i]->getRM());
+        printf("03. number of writes:%32lu\n", cacheOnbus[loop_i]->getWrites());
+        printf("04. number of write misses:%23lu\n", cacheOnbus[loop_i]->getWM());
+        printf("05. total miss rate:%32.2f%%\n", ((float)(cacheOnbus[loop_i]->getRM()+cacheOnbus[loop_i]->getWM()))*100.0/((float)(cacheOnbus[loop_i]->getReads()+cacheOnbus[loop_i]->getWrites())));
+        printf("06. number of writebacks:%26lu\n", cacheOnbus[loop_i]->getWB());
+        printf("07. number of cache-to-cache transfers:%10lu\n", cacheOnbus[loop_i]->getCache2cache());
+        printf("08. number of memory transactions:%19lu\n", cacheOnbus[loop_i]->getMemtransactions());
         printf("09. number of interventions:%22lu\n", cacheOnbus[loop_i]->getInterv());
         printf("10. number of invalidations:%24lu\n", cacheOnbus[loop_i]->getInval());
         printf("11. number of flushes:%28lu\n", cacheOnbus[loop_i]->getFlush());
         printf("12. number of BusRdX:%30lu\n", cacheOnbus[loop_i]->getBusrdx());
-        */
         
+        /*
         printf("============ Simulation results (Cache %u) ============\n",(uint)loop_i);
         printf("01. number of reads:%lu\n", cacheOnbus[loop_i]->getReads());
         printf("02. number of read misses:%lu\n", cacheOnbus[loop_i]->getRM());
@@ -322,5 +326,6 @@ void coherenceController::dumpMetrics()
         printf("10. number of invalidations:%lu\n", cacheOnbus[loop_i]->getInval());
         printf("11. number of flushes:%lu\n", cacheOnbus[loop_i]->getFlush());
         printf("12. number of BusRdX:%lu\n", cacheOnbus[loop_i]->getBusrdx());
+        */
     }
 }

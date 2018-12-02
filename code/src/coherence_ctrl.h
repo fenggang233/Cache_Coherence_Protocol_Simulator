@@ -42,8 +42,9 @@ enum coh_protocol   {
 
 /** Cache Tag Search Outcome Enumeration */
 enum searchOutcome  {
-                        MISS =  0,  /**< Cache Miss */
-                        HIT =   1   /**< Cache Hit */
+                        MISS =  0,      /**< Cache Miss */
+                        HIT =   1,      /**< Cache Hit */
+                        RST_OUT = 2     /**< Reset State */
 };
 
 /** 
