@@ -383,8 +383,6 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
                                     case MODIFIED:  /** Update Flush Counter */
                                                     cacheOnbus[loop_i]->incFlush();
                                                     
-                                                    cacheOnbus[procNum]->incMemtransactions();
-                                                    
                                                     /** Flush Constitutes as a Memory Transaction */
                                                     cacheOnbus[loop_i]->incMemtransactions();
                                                     
@@ -399,10 +397,7 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
                                                     
                                                     break;
                                                     
-                                    case EXCLUSIVE: /** Update Flush Counter */
-                                                    cacheOnbus[loop_i]->incCache2cache();
-                                                
-                                                    /** Update Intervention Counter */
+                                    case EXCLUSIVE: /** Update Intervention Counter */
                                                     cacheOnbus[loop_i]->incInterv();
                                                 
                                                     busControl = loop_i;
@@ -410,10 +405,7 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
                                                 
                                                     break;
                                                     
-                                    default:    /** Update Flush Counter */
-                                                cacheOnbus[loop_i]->incCache2cache();
-                                            
-                                                busControl = loop_i;
+                                    default:    busControl = loop_i;
                                                 busCommand = FLUSHOPT;
                                             
                                                 break;
@@ -454,18 +446,11 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
                                         /** Flush Constitutes as a Memory Transaction */
                                         cacheOnbus[loop_i]->incMemtransactions();
                                         
-                                        cacheOnbus[procNum]->incMemtransactions();
-                                        
                                         /** Flush Constitutes as a Writeback */
                                         cacheOnbus[loop_i]->incWB();
                                         
                                         busControl = loop_i;
                                         busCommand = FLUSH;
-                                    }
-                                    else
-                                    {
-                                        /** Update Flush Counter */
-                                        cacheOnbus[loop_i]->incCache2cache();
                                     }
                                     
                                     /** Invalidate Cache Line */
@@ -536,6 +521,12 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
                 line->setFlags(SHARED);
             }
         }
+    }
+    
+    if((busCommand==FLUSHOPT)||(busCommand==FLUSH))
+    {
+        /** Update Flush Counter */
+        cacheOnbus[procNum]->incCache2cache();
     }
     
     /** Reset Bus */
