@@ -875,17 +875,17 @@ void coherenceController::dumpMetrics()
     {
         
         printf("============ Simulation results (Cache %u) ============\n",(uint)loop_i);
-        printf("01. number of reads:%34lu\n", cacheOnbus[loop_i]->getReads());
-        printf("02. number of read misses:%26lu\n", cacheOnbus[loop_i]->getRM());
-        printf("03. number of writes:%32lu\n", cacheOnbus[loop_i]->getWrites());
-        printf("04. number of write misses:%23lu\n", cacheOnbus[loop_i]->getWM());
-        printf("05. total miss rate:%32.2f%%\n", ((float)(cacheOnbus[loop_i]->getRM()+cacheOnbus[loop_i]->getWM()))*100.0/((float)(cacheOnbus[loop_i]->getReads()+cacheOnbus[loop_i]->getWrites())));
-        printf("06. number of writebacks:%26lu\n", cacheOnbus[loop_i]->getWB());
-        printf("07. number of cache-to-cache transfers:%10lu\n", cacheOnbus[loop_i]->getCache2cache());
-        printf("08. number of memory transactions:%19lu\n", cacheOnbus[loop_i]->getMemtransactions());
-        printf("09. number of interventions:%22lu\n", cacheOnbus[loop_i]->getInterv());
-        printf("10. number of invalidations:%24lu\n", cacheOnbus[loop_i]->getInval());
-        printf("11. number of flushes:%28lu\n", cacheOnbus[loop_i]->getFlush());
-        printf("12. number of BusRdX:%30lu\n", cacheOnbus[loop_i]->getBusrdx());
+        printf("01. number of reads:    \t\t\t%lu\n", cacheOnbus[loop_i]->getReads());
+        printf("02. number of read misses:      \t\t%lu\n", cacheOnbus[loop_i]->getRM());
+        printf("03. number of writes:   \t\t\t%lu\n", cacheOnbus[loop_i]->getWrites());
+        printf("04. number of write misses:     \t\t%lu\n", cacheOnbus[loop_i]->getWM());
+        printf("05. total miss rate:    \t\t\t%.2f%%\n", ((float)(cacheOnbus[loop_i]->getRM()+cacheOnbus[loop_i]->getWM()))*100.0/((float)(cacheOnbus[loop_i]->getReads()+cacheOnbus[loop_i]->getWrites())));
+        printf("06. number of writebacks:\t\t\t%lu\n", cacheOnbus[loop_i]->getWB());
+        printf("07. number of cache-to-cache transfers: \t%lu\n", cacheOnbus[loop_i]->getCache2cache());
+        printf("08. number of memory transactions:      \t%lu\n", cacheOnbus[loop_i]->getMemtransactions());
+        printf("09. number of interventions:    \t\t%lu\n", cacheOnbus[loop_i]->getInterv());
+        printf("10. number of invalidations:    \t\t%lu\n", cacheOnbus[loop_i]->getInval());
+        printf("11. number of flushes:  \t\t\t%lu\n", cacheOnbus[loop_i]->getFlush());
+        printf("12. number of BusRdX:   \t\t\t%lu\n", cacheOnbus[loop_i]->getBusrdx());
     }
 }
