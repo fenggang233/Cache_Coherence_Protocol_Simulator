@@ -3,6 +3,8 @@
  * \author Soumil Krishnanand Heble
  * \date 12/01/2018
  * \brief Source: Coherence Controller and Bus Class
+ * Improvements: Make the bus as a class instead of a bunch 
+ * of if else and case statements, this will result in cleaner interfaces.
  */
 
 #include "coherence_ctrl.h"
@@ -541,7 +543,322 @@ void coherenceController::processMESI(ulong procNum, uchar rdWr, ulong reqAddr)
 
 void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr)
 {
-    printf("ERROR: DRAGON\n");
+    /** Increment the Cache's Request Count */
+    cacheOnbus[procNum]->inccurrentCycle();
+    
+    /** Pointer to Cache Line to Update Finally */
+    cacheLine *line;
+    
+    /** Check Type of Read and Update Counter */
+    if(rdWr==RD_REQ)
+    {
+        cacheOnbus[procNum]->incReads();
+    }
+    else
+    {
+        cacheOnbus[procNum]->incWrites();
+    }
+    
+    /** Look for the Requested Address in the Cache */
+    line = cacheOnbus[procNum]->findLine(reqAddr);
+    
+    /** If Cache Line Not Found */
+    if(line==NULL)
+    {
+        /** Set To Miss */
+        hitMiss = MISS;
+        
+        /** Fetch a Victim Cache Line for the Data */
+        cacheLine *victim = cacheOnbus[procNum]->findLineToReplace(reqAddr);
+        assert(victim != 0);
+        
+        /** Store Victim Block to the Cache Line to Update Pointer */
+        line = victim;
+        
+        if((victim->getFlags()==MODIFIED)||(victim->getFlags()==SMODIFIED))
+        {
+            /** Update Writeback Counter */
+            cacheOnbus[procNum]->incWB();
+            
+            /** Update Memory Transaction Counter */
+            cacheOnbus[procNum]->incMemtransactions();
+        }
+        
+        /* Bus in Control of Current Processor */
+        busControl = procNum;
+        
+        /* Bus Signals are Valid */
+        busValid = VALID_BUS;
+        
+        /* Place Required Address on the Bus */
+        busAddr = reqAddr;
+        
+        if(rdWr==RD_REQ)
+        {
+            /** Update Read Miss Counters */
+            cacheOnbus[procNum]->incRM();
+            
+            /** Place BusRd Command on Bus */
+            busCommand = BUSRD;
+            
+            /** Update BusRd Counter */
+            cacheOnbus[procNum]->incBusrd();
+        }
+        else
+        {
+            /** Update Write Miss Counters */
+            cacheOnbus[procNum]->incWM();
+            
+            /** Place BusRdX Command on Bus */
+            busCommand = BUSUPD;
+            
+            /** Update BusRd Counter */
+            cacheOnbus[procNum]->incBusrd();
+            
+            /** Update BusRdX Counter */
+            cacheOnbus[procNum]->incBusupdupgr();
+        }
+    }
+    else
+    {
+        /** Set To Hit */
+        hitMiss = HIT;
+        
+        /** If Hit Cache Line in Shared State and a Write is Required */
+        if(((line->getFlags()==SMODIFIED)||(line->getFlags()==SCLEAN))&&(rdWr==WR_REQ))
+        {
+            /* Bus in Control of Current Processor */
+            busControl = procNum;
+            
+            /* Bus Signals are Valid */
+            busValid = VALID_BUS;
+            
+            /* Place Required Address on the Bus */
+            busAddr = reqAddr;
+            
+            /** Place BusRdX Command on Bus */
+            busCommand = BUSUPD;
+            
+            /** Update BusRdX Counter */
+            cacheOnbus[procNum]->incBusupdupgr();
+        }
+    }
+    
+    /* Perform Bus Snooping Operations */
+    if(busValid==VALID_BUS)
+    {
+        uchar loop_i;
+        
+        switch(busCommand)
+        {
+            case BUSRD: for(loop_i=0; loop_i<num_processors; loop_i++)
+                        {
+                            /** Look for the Request Address in the Cache */
+                            cacheLine *line_procn = cacheOnbus[loop_i]->findLine(busAddr);
+                            
+                            /** If Found in Cache Other than Cache Serivicing the Request */
+                            if((line_procn!=NULL)&&(loop_i!=procNum))
+                            {
+                                /** Copies Exist */
+                                copiesExist = CEX;
+                                
+                                switch(line_procn->getFlags())
+                                {
+                                    case MODIFIED:  /** Update Flush Counter */
+                                                    cacheOnbus[loop_i]->incFlush();
+                                                    
+                                                    /** Update Intervention Counter */
+                                                    cacheOnbus[loop_i]->incInterv();
+                                                    
+                                                    /** Set Cache Line State To Shared */
+                                                    line_procn->setFlags(SMODIFIED);
+                                                    
+                                                    busControl = loop_i;
+                                                    busCommand = FLUSH;
+                                                    
+                                                    break;
+                                                    
+                                    case EXCLUSIVE: /** Update Intervention Counter - Unsure */
+                                                    cacheOnbus[loop_i]->incInterv();
+                                                    
+                                                    /** Set Cache Line State To Shared */
+                                                    line_procn->setFlags(SCLEAN);
+                                                    
+                                                    busControl = loop_i;
+                                                    
+                                                    break;
+                                                    
+                                    case SMODIFIED: /** Update Flush Counter */
+                                                    cacheOnbus[loop_i]->incFlush();
+                                                    
+                                                    /** Set Cache Line State To Shared */
+                                                    line_procn->setFlags(SMODIFIED);
+                                                    
+                                                    busControl = loop_i;
+                                                    busCommand = FLUSH;
+                                                    break;
+                                                    
+                                    case SCLEAN:    busControl = loop_i;
+                                                    break;
+                                                    
+                                    default:    printf("ERROR\n");
+                                }
+                            }
+                        }
+                        
+                        if(busControl==procNum)
+                        {
+                            cacheOnbus[procNum]->incMemtransactions();
+                            copiesExist = NCEX;
+                        }
+                        else
+                        if(busCommand!=FLUSH)
+                        {
+                            cacheOnbus[procNum]->incMemtransactions();
+                        }
+                        break;
+                        
+            case BUSUPD:    for(loop_i=0; loop_i<num_processors; loop_i++)
+                            {
+                                /** Look for the Request Address in the Cache */
+                                cacheLine *line_proc = cacheOnbus[loop_i]->findLine(busAddr);
+                                
+                                /** If Found in Cache Other than Cache Serivicing the Request */
+                                if((line_proc!=NULL)&&(loop_i!=procNum))
+                                {
+                                    /** Copies Exist */
+                                    copiesExist = CEX;
+                                    
+                                    switch(line_proc->getFlags())
+                                    {
+                                        case MODIFIED:  /** Update Flush Counter */
+                                                        cacheOnbus[loop_i]->incFlush();
+                                                        
+                                                        /** Update Intervention Counter */
+                                                        cacheOnbus[loop_i]->incInterv();
+                                                        
+                                                        /** Set Cache Line State To Shared */
+                                                        line_proc->setFlags(SCLEAN);
+                                                        
+                                                        busControl = loop_i;
+                                                        busCommand = FLUSH;
+                                                        
+                                                        break;
+                                                        
+                                        case EXCLUSIVE: /** Update Intervention Counter - Unsure */
+                                                        cacheOnbus[loop_i]->incInterv();
+                                                        
+                                                        busControl = loop_i;
+                                                        
+                                                        /** Set Cache Line State To Shared */
+                                                        line_proc->setFlags(SCLEAN);
+                                                        
+                                                        break;
+                                                        
+                                        case SMODIFIED: if(hitMiss==MISS)
+                                                        {
+                                                            /** Update Flush Counter */
+                                                            cacheOnbus[loop_i]->incFlush();
+                                                        }
+                                                        
+                                                        busControl = loop_i;
+                                                        busCommand = FLUSH;
+                                                        
+                                                        /** Set Cache Line State To Shared */
+                                                        line_proc->setFlags(SCLEAN);
+                                                        
+                                                        break;
+                                                    
+                                        case SCLEAN:    busControl = loop_i;
+                                                        break;
+                                                        
+                                        default:    printf("ERROR\n");
+                                    }
+                                }
+                            }
+                            
+                            if(busControl==procNum)
+                            {
+                                if(hitMiss==MISS)
+                                {
+                                    cacheOnbus[procNum]->incMemtransactions();
+                                }
+                                copiesExist = NCEX;
+                            }
+                            else
+                            if((busCommand!=FLUSH)&&(hitMiss==MISS))
+                            {
+                                cacheOnbus[procNum]->incMemtransactions();
+                            }
+                            break;
+                            
+            default:    printf("ERROR\n");
+        }
+    }
+    
+    /** Perform Finishing Actions */
+    if(hitMiss==HIT)
+    {
+        cacheOnbus[procNum]->updateLRU(line);
+        
+        if(rdWr==WR_REQ)
+        {
+            switch(line->getFlags())
+            {
+                case EXCLUSIVE: line->setFlags(MODIFIED);
+                                break;
+                                
+                default:    if(copiesExist==NCEX)
+                            {
+                                line->setFlags(MODIFIED);
+                            }
+                            else
+                            {
+                                line->setFlags(SMODIFIED);
+                            }
+            }
+        }
+    }
+    else
+    {
+        ulong tag;
+        tag = cacheOnbus[procNum]->calcTag(reqAddr);
+        line->setTag(tag);
+        
+        cacheOnbus[procNum]->updateLRU(line);
+        
+        if(rdWr==WR_REQ)
+        {
+            if(copiesExist==NCEX)
+            {
+                line->setFlags(MODIFIED);
+            }
+            else
+            {
+                line->setFlags(SMODIFIED);
+            }
+        }
+        else
+        {
+            if(copiesExist==NCEX)
+            {
+                line->setFlags(EXCLUSIVE);
+            }
+            else
+            {
+                line->setFlags(SCLEAN);
+            }
+        }
+    }
+    
+    /** Reset Bus */
+    busControl = 0xFF;
+    busValid = INVALID_BUS;
+    busAddr = 0xFFFFFFFF;
+    busCommand = INVALID_BUS;
+    copiesExist = NCEX;
+    
+    hitMiss = RST_OUT;
 }
 
 void coherenceController::dumpMetrics()
