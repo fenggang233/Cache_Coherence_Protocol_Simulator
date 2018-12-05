@@ -670,6 +670,8 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                                                     /** Update Intervention Counter */
                                                     cacheOnbus[loop_i]->incInterv();
                                                     
+                                                    cacheOnbus[loop_i]->incMemtransactions();
+                                                    
                                                     /** Set Cache Line State To Shared */
                                                     line_procn->setFlags(SMODIFIED);
                                                     
@@ -694,6 +696,8 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                                                     /** Set Cache Line State To Shared */
                                                     line_procn->setFlags(SMODIFIED);
                                                     
+                                                    cacheOnbus[loop_i]->incMemtransactions();
+                                                    
                                                     busControl = loop_i;
                                                     busCommand = FLUSH;
                                                     break;
@@ -709,7 +713,7 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                         if(busControl==procNum)
                         {
                             cacheOnbus[procNum]->incMemtransactions();
-                            copiesExist = NCEX;
+                            //copiesExist = NCEX; //Redundant
                         }
                         else
                         if(busCommand!=FLUSH)
@@ -737,6 +741,8 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                                                         /** Update Intervention Counter */
                                                         cacheOnbus[loop_i]->incInterv();
                                                         
+                                                        cacheOnbus[loop_i]->incMemtransactions();
+                                                        
                                                         /** Set Cache Line State To Shared */
                                                         line_proc->setFlags(SCLEAN);
                                                         
@@ -759,6 +765,7 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                                                         {
                                                             /** Update Flush Counter */
                                                             cacheOnbus[loop_i]->incFlush();
+                                                            cacheOnbus[loop_i]->incMemtransactions();
                                                         }
                                                         
                                                         busControl = loop_i;
@@ -783,7 +790,7 @@ void coherenceController::processDRAGON(ulong procNum, uchar rdWr, ulong reqAddr
                                 {
                                     cacheOnbus[procNum]->incMemtransactions();
                                 }
-                                copiesExist = NCEX;
+                                //copiesExist = NCEX;   //Redundant
                             }
                             else
                             if((busCommand!=FLUSH)&&(hitMiss==MISS))
