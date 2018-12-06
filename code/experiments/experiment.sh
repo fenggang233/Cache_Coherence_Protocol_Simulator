@@ -20,7 +20,7 @@ do
 	echo "Size:$CACHE_SIZE, Associativity:$CACHE_ASSOC, Block Size:$CACHE_BLKSIZE, Processor(s):4, Protocol:${CCPROTOCOLS[$ccprot]}, Trace:canneal.04t.longTrace"
 
 	echo "./smp_cache $CACHE_SIZE $CACHE_ASSOC $CACHE_BLKSIZE 4 $ccprot canneal.04t.longTrace > ./$RESULTDIR/${CCPROTOCOLS[$ccprot]}_test.txt"
-	./smp_cache $CACHE_SIZE $CACHE_ASSOC $CACHE_BLKSIZE 4 $ccprot ./canneal.04t.longTrace > ./$RESULTDIR/${CCPROTOCOLS[$ccprot]}_test.txti
+	./smp_cache $CACHE_SIZE $CACHE_ASSOC $CACHE_BLKSIZE 4 $ccprot ./canneal.04t.longTrace > ./$RESULTDIR/${CCPROTOCOLS[$ccprot]}_test.txt
 done
 
 #Cache Size Varied
@@ -72,7 +72,7 @@ do
 		echo "Size: $CACHE_BLKSIZE, Associativity:$CACHE_ASSOC, Block Size:$cache_blks, Processor(s):4, Protocol:${CCPROTOCOLS[$ccprot]}, Trace:canneal.04t.longTrace"
 
     		echo "./smp_cache $CACHE_SIZE $CACHE_ASSOC $cache_blks 4 $ccproc canneal.04t.longTrace >> ./$RESULTDIR/$CSVFILEN"
-    		./smp_cache $CACHE_SIZE $CACHE_ASSOC $cache_blks 4 $ccprot ./canneal.04t.longTrace >> ./$RESULTDIR/$CSVFILEN
+    		./smp_cache $CACHE_SIZE $CACHE_ASSOC $cache_blks 4 $ccproc ./canneal.04t.longTrace >> ./$RESULTDIR/$CSVFILEN
 	done
 done
 
