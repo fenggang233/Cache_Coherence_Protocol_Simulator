@@ -1,0 +1,63 @@
+===== 506 Personal information =====
+Soumil Krishnanand Heble
+sheble
+ECE492 Students? NO
+===== 506 SMP Simulator configuration =====
+L1_SIZE: 1048576
+L1_ASSOC: 8
+L1_BLOCKSIZE: 256
+NUMBER OF PROCESSORS: 4
+COHERENCE PROTOCOL: Dragon
+TRACE FILE: ./canneal.04t.longTrace
+============ Simulation results (Cache 0) ============
+01. number of reads:    			112661
+02. number of read misses:      		4628
+03. number of writes:   			11942
+04. number of write misses:     		3
+05. total miss rate:    			3.72%
+06. number of writebacks:			198
+07. number of cache-to-cache transfers: 	0
+08. number of memory transactions:      	4829
+09. number of interventions:    		1125
+10. number of invalidations:    		0
+11. number of flushes:  			3
+12. number of BusRdX:   			0
+============ Simulation results (Cache 1) ============
+01. number of reads:    			110830
+02. number of read misses:      		4633
+03. number of writes:   			11710
+04. number of write misses:     		1
+05. total miss rate:    			3.78%
+06. number of writebacks:			200
+07. number of cache-to-cache transfers: 	0
+08. number of memory transactions:      	4834
+09. number of interventions:    		1175
+10. number of invalidations:    		0
+11. number of flushes:  			11
+12. number of BusRdX:   			0
+============ Simulation results (Cache 2) ============
+01. number of reads:    			114938
+02. number of read misses:      		4630
+03. number of writes:   			12383
+04. number of write misses:     		2
+05. total miss rate:    			3.64%
+06. number of writebacks:			185
+07. number of cache-to-cache transfers: 	0
+08. number of memory transactions:      	4817
+09. number of interventions:    		1143
+10. number of invalidations:    		0
+11. number of flushes:  			9
+12. number of BusRdX:   			0
+============ Simulation results (Cache 3) ============
+01. number of reads:    			113428
+02. number of read misses:      		4640
+03. number of writes:   			12108
+04. number of write misses:     		0
+05. total miss rate:    			3.70%
+06. number of writebacks:			196
+07. number of cache-to-cache transfers: 	0
+08. number of memory transactions:      	4836
+09. number of interventions:    		1176
+10. number of invalidations:    		0
+11. number of flushes:  			9
+12. number of BusRdX:   			0
